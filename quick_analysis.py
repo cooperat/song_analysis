@@ -54,7 +54,7 @@ for i in [3, 5, 8, 10, 15, 20, 30]:
 words_df = pandas.DataFrame.from_dict(words_dict)
 words_df.to_csv('top_words_clusters.csv', index=False, encoding='utf8')
 lemmatized_df.to_csv('./data/songsclustered.csv', index=False, encoding='utf8')
-'''
+
 
 lemmatized_df = read_csv('./data/songsclustered.csv')
 #  get statistics on the clusters
@@ -77,23 +77,17 @@ for j in range(number_clusters):
         artist_top_words = features[top_words]
         print(artist_top_words)
 
-        #artist_df = pandas.concat([artist_df, artist_present])
-
-
-
 #top_artists['song'].plot.bar(stacked=True)
 #plt.rcParams["figure.figsize"] = (50, 10)
-#plt.show()
+#plt.show()'''
 
 
-
-'''
 #  Predictions on the songs : predict to whcih cluster the song belongs
-lemmatized_df = read_csv('./data/songsclustered.csv')
+lemmatized_df = read_csv('./data/songscomplete.csv')
 texts = lemmatized_df['lyrics']
 texts = texts.values.tolist()
-tfidf = get_tfidf(texts)
-ids_poems = lemmatized_df['cluster_15']
+tfidf, _= get_tfidf(texts)
+ids_poems = lemmatized_df['is_hit']
 X_train, X_test, y_train, y_test = train_test_split(tfidf, ids_poems, shuffle=True, test_size=0.2)
 
 clf_dict = {
@@ -104,8 +98,4 @@ predictions = []
 
 for clf_name, clf in clf_dict.items():
     clf.fit(X_train, y_train)
-    preds = pandas.Series(clf.predict(X_test))
-    results = pandas.DataFrame({'preds': preds,
-                                'real': y_test})
-    results.to_csv('randomforest.csv', index=False)
-    print(clf_name, clf.score(X_test, y_test))'''
+    print(X_test, clf.predict(X_test))

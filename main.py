@@ -23,8 +23,9 @@ bill_artists, all_artists = bill_df['artist'].unique(), songs_df['artist'].str.l
 match_artists = set(bill_artists).intersection(all_artists)
 #
 songs_df['is_hit'] = [(songs_df['artist'][i].lower() in match_artists) for i in range(len(songs_df.index))]
+songs_df.to_csv('./data/songscomplete.csv', index=False, encoding='utf8')
 
-
+'''
 #  get name of the songs present in both files
 bill_songs, all_songs = bill_df['title'].unique(), songs_df['song'].str.lower().unique()
 match_songs = set(bill_songs).intersection(all_songs)
@@ -36,3 +37,4 @@ clusters_distrib['song'].plot.bar()
 plt.rcParams["figure.figsize"] = (50, 10)
 plt.show()
 
+'''

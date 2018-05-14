@@ -1,0 +1,157 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{float}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage[font=small,labelfont=bf]{caption}
+%\usepackage{pdfpages}
+%\usepackage[style=numeric, backend=biber, sorting=none]{biblatex}
+\geometry{hmargin=2.5cm,vmargin=2.5cm}
+%\bibliography{biblio.bib}
+
+\begin{document}
+\begin{titlepage}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\begin{center}
+
+\HRule \\[0.4cm]
+{ \huge Projet de DAC}\\[0.4cm] % Title of your document
+\HRule \\[2cm]
+
+\vspace{2cm}
+
+Membres du groupe : \\
+Charles Jacquet, \\
+Kayaturan Anaïs
+
+
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+Ce rapport détaille les objectifs, la réalisation et les résultats de notre projet dans le cadre du cours de DAC.
+
+Nous avons étudié des chansons de musiques populaires, majoritairement d'origine américaine et issues des années 60 à aujourd'hui.
+Nous avons cherché à déterminer s'il existait des similarités entre artistes à partir de l'analyse des textes de leurs chansons, au-delà du genre musical. Nous avons aussi voulu voir si le texte d'une chanson était lié à son succès.
+
+
+\section{Données utilisées}
+
+Les jeux de données utilisés dans le cadre de ce projet sont :
+\begin{itemize}
+	\item Le \textbf{55000+ Song Lyrics} mis à disposition par Sergey Kuznetsov sur le site Kaggle. Il regroupe plus de 55 000 chansons de la musique populaire américaine (majoritairement), avec pour chaque chanson : le nom de l'artiste, le nom de la chanson et les paroles.
+	\item L'ensemble des \textbf{top 100 du Billboard}, un hebdomadaire américain spécialisé dans l'industrie musical qui donne établit chaque année le classement des 100 chansons les plus populaires. Nous avons scrapé les données de ce top 100, depuis les années 1958 jusqu'à aujourd'hui, avec pour chaque top 100 les informations suivantes : nom des artistes, chansons des artistes.
+	\item Les \textbf{données que nous avons extrait de Wikipedia} associées à chaque artiste présent dans le dataset du 55000+ Song Lyrics : le genre musical de l'artiste, la période d'activité et les origines géographiques.
+\end{itemize}
+
+
+
+
+
+\section{Nettoyage de l'arrière plan}
+
+Les pages de manuels comportent souvent des motifs décoratifs que Tesseract peut confondre avec des lettres ou des mots. Afin d'éviter ces faux positifs, nous appliquons un algorithme de nettoyage d'arrière plan appelé Stroke Width Transform (SWT) %\cite{celery}
+ dont le but est d'éliminer tout ce qui n'est pas du texte. On obtient ainsi une image nettoyée contenant des éléments de texte, que Tesseract va ensuite segmenter en mots.
+
+Nous avons utilisée l'implémentation de l'algorithme SWT présente dans la librairie Python \textbf{libpillowfight}.
+
+L'algortihme SWT se base, comme son nom l'indique, sur une "largeur de bande". Pour chaque pixel de l'image, l'algorithme essaie de trouver une bande, c'est à dire un ensemble de pixels de largeur à peu près constante, et attribue la dite largeur au pixel. Une fois une valeur assignée à chaque pixel, l'algorithme cherche des ensembles de pixels pouvant correspondre à des lettres en regardant la variance de la largeur, les angles (courbure brutale ou faible, etc). Il applique pour cela un ensemble de règles pré-apprises.
+
+On obtient après nettoyage l'image suivante :
+
+\begin{center}
+\captionof{figure}{Page nettoyée de façon à ne garder que le texte}
+\end{center}
+
+Comme on peut le voir, les résultats sont plutôt bons. Il arrive que l'algorithme détecte des morceaux en trop (motifs ressemblant à des lettres) ou en manque (lettres très stylisées). Les morceaux en trop sont généralement éliminés par Tesseract (qui cherche à reconnaître des mots entiers). Il arrive en revanche que l'on manque des titres ayant un style particulier car le nettoyage est trop agressif. 
+
+
+\section{Analyse de formattage}
+Dans les manuels scolaires, il est fréquent de voir que différents éléments pédagogiques sont distingés par des différences de formattage. Par exemple, les consignes sont dans une autre couleur, ou les leçons sont en gras. 
+
+Les éléments intéressants de formattage sont :
+\begin{itemize}
+	\item La taille de la police, qui est en général plus grande pour les titres
+	\item Le gras et la couleurs qui dénote une différences sémantique avec le reste du texte, ou un point important.
+\end{itemize}
+
+Il nous a donc paru être intéressant d'analyser le formattage du texte. Nous avons majoritairement utilisé la librairie OpenCV qui est largement utilisée dans le domaine de la vision par ordinateur.
+
+\smallskip
+
+\subsection{Trouver le texte en gras}
+Pour trouver le texte en gras, nous avons mis en place un algorithme qui prend en entrée un ensemble de blocs qui sert d'ensemble de référence, et le bloc à analyser pour savoir s'il est en gras ou pas.
+\begin{itemize}
+	\item Dilatation du texte afin d'accentuer les différences entre texte en gras et texte normal, appliquée à l'ensemble de blocs et le bloc à analyser.
+	\item Calcul des densités de couleur pour l'ensemble de blocs et le bloc (images noir et blanc).
+	\item Comparaison entre les deux densités. Si la densité du bloc à analyser est supérieure à celle de l'ensemble de blocs, alors on considère qu'il est en gras.
+\end{itemize}
+Il s'agit donc d'un algorithme assez élémentaire, et dépendant de l'ensemble de blocs choisi. On pourrait l'améliorer en utilisant un ensemble choisi intelligemment ou en permettant à l'utilisateur du programme de jouer sur un seuil.
+
+
+\section{Pattern matching}
+Les graphistes de manuels scolaires utilisent beaucoup de petits motifs dessinés pour indiquer des blocs pédagogiques. On retrouve aussi beaucoup de motifs dans les documents textuels pour indiquer des récurrences, comme les points ou les tirets débutant chaque nouvel élément d'une liste.
+C'est pourquoi il était intéressant de repérer les motifs sur les pages de manuels scolaires. Deux approches permettent d'atteindre ce but. La première consiste à trouver les motifs à partir de motifs de référence déjà connus (comme les points qui se retrouvent dans quasiment tous les manuels). La seconde consiste à trouver soi-même les motifs de la page.
+
+\subsection{Trouver des motifs déjà connus}
+\label{sec:motifs connus}
+
+Nous avons mis en place l'algorithme PatternMatcher qui part d'une page et d'un exemple du motif à chercher et renvoie la liste des coordonnées des motifs trouvés sur la page.
+
+Il repose sur la fonction \textbf{matchTemplate} d'OpenCV qui "fait glisser" pixel par pixel le template sur la page et calcule un score de comparaison entre la zone de la page et le motif. Si le score est supérieur à un seuil fixé par le programmeur, alors la zone correspond au motif.
+
+L'enjeu ici est de savoir comment fixer le seuil. Nous avons joué sur ce paramètre avec plusieurs pages et plusieurs motifs, et nous nous sommes rendus compte qu'il n'y avait pas de seuil optimal. Il peut donc être intéressant de faire du semi-supervisé avec cet algorithme en permettant à l'utilisateur du programme de fixer lui-même le seuil.
+
+
+\subsection{Trouver des motifs, sans motifs de référence}
+Le but de cette partie est de trouver les motifs de la page. Un motif est un élément non textuel récurrent. L'approche s'est faite en deux étapes : d'abord, trouver toutes les petites images de la page qui seront des candidats au rôle de motif. Ensuite, tester si ces candidats sont effectivement des motifs en voyant s'ils sont récurrents sur la page.
+
+\paragraph{Détecteur d'image}
+L'algorithme ImageDetector a pour but de donner les coordonnées des images sur un page. Les étapes sont les suivantes :
+\begin{itemize}
+	\item Retirer le texte de la page à partir des coordonnées des blocs de texte donnés par OCR
+	\item Retirer le bruit de la page (dû en partie à la suppression de texte, qui a tendance à laisser quelques restes de texte se trouvant hors des blocs détectés). On applique un filtre gaussien.
+	\item Binariser de la page pour qu'il ne reste plus que deux teintes, noir ou blanc. On utilise la \textbf{binarisation de Otsu} qui détermine le seuil de binarisation en cherchant à minimiser la variance intra-classe entre les parties noires et blanches.
+	
+	\smallskip
+	Suite à cela, on définit un masque que l'on va "faire glisser" sur toute la page. Ce masque va permettre de détecter les parties d'images.
+	
+	\item Moyenner les niveaux de pixels sous le masque et le comparer avec un seuil à choisir. Si le moyenne est au-dessus du seuil, alors on est sur un région qui correspond à une image. On stocke les coordonnées associées.
+	\item Fusionner les coordonnées stockées, ce qui permet de fusionner les régions d'images et d'obtenir les coordonnées finales des images.
+\end{itemize}
+
+La taille du masque est un paramètre important. Plus elle est petite, plus on va détecter les petits détails de la page ; mais le temps de calcul est considérablement plus long. Il y a aussi un risque de détecter du bruit qui n'aurait pas été retiré par le filtre gaussien.
+
+\paragraph{Choisir les candidats qui sont des motifs}
+Pour chaque image détectée, on applique l'algorithme de pattern matching décrit au paragraphe~\ref{sec:motifs connus}.
+
+Si le pattern matching trouve que l'image se retrouve plusieurs fois sur la page, alors l'image est un motif.
+
+
+\paragraph{Améliorations}
+Il s'agit encore une fois d'algorithmes très dépendants des différents seuils fixés. Il faudrait trouver des moyens d'automatiser la manière dont on fixe les seuils.
+
+On pourrait aussi tirer de l'information en détectant les images d'une page, et en appliquant le pattern matching de cette image sur d'autres pages. Cela permettrait de trouver les motifs qui sont récurrents non pas sur une page données mais au travers des pages, comme les titres de chapitre.
+
+
+\section{Extraire le texte des images}
+Les OCR sont très mauvais pour extraire du texte contextualisé, c'est-à-dire inclus dans une image. Par exemple, des titres contenus dans des formes rectangulaires ou des chiffres d'exercices dans des bulles. Il s'agit pourtant d'informations importantes sur l'organisation de la page.
+
+L'algorithme d'extraction repose sur des classifiers de texte déjà entrainés et l'algorithme de détection de texte de Neumann et Matas se trouvant dans \textbf{[opencv-contrib]}.
+
+On commence par binariser la page de manuel dont on a retiré le texte déjà détecté par OCR, et on nettoie le bruit. On applique ensuite l'algorithme qui retourne les régions candidates dans lesquelles se trouvent du texte. Enfin, on passe l'OCR sur ces régions candidates.
+
+%\printbibliography
+\end{document}          
+\grid
