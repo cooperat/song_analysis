@@ -6,6 +6,7 @@ from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import nltk
+import numpy as np
 
 
 def lower(words):
@@ -19,7 +20,9 @@ def tokenize(words):
 
 
 def filter_words(tokens):
-    customized_stopwords = stopwords.words('english')
+    customized_stopwords = stopwords.words('english') + ['like', 'oh', 'get', 'yeah', 'give', 'come',
+                                                         'got', 'hey', 'know', 'make', 'take', 'could', 'can',
+                                                         'one']
     filtered_words = [w for w in tokens if not w in customized_stopwords]
     return filtered_words
 
@@ -44,7 +47,7 @@ def get_lemmatized_sentence(sentence):
 def get_tfidf(list_of_texts):
     tfidf_transformer = TfidfVectorizer(list_of_texts, encoding='utf-8')
     tfidf_matrix = tfidf_transformer.fit_transform(list_of_texts)
-    return tfidf_matrix
+    return tfidf_matrix, np.array(tfidf_transformer.get_feature_names())
 
 
 def get_count(list_of_texts):

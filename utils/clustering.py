@@ -38,13 +38,13 @@ def cluster_poems_per_text(data, clusters_number, seed):
     order_centroids = km.cluster_centers_.argsort()[:, ::-1]
 
     terms = vectorizer.get_feature_names()
+    dict_terms = {index: [] for index in range(true_k)}
+
     for i in range(true_k):
         print("Cluster %d:" % i, end='')
         for ind in order_centroids[i, :10]:
             print(' %s' % terms[ind], end='')
+            dict_terms[i].append(terms[ind])
         print()
 
-    # Récupération des résultats
-    clusters = km.labels_
-
-    return clusters
+    return km.labels_, dict_terms, km.inertia_, km.cluster_centers_
