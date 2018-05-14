@@ -20,7 +20,7 @@ import sys
 from time import time
 
 
-def cluster_poems_per_text(data, clusters_number):
+def cluster_poems_per_text(data, clusters_number, seed):
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)s %(message)s')
 
@@ -32,7 +32,7 @@ def cluster_poems_per_text(data, clusters_number):
     vectorizer = TfidfVectorizer(max_df=0.95, min_df=2)
     X = vectorizer.fit_transform(data)
 
-    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=20, n_init=1)
+    km = KMeans(n_clusters=true_k, init='k-means++', max_iter=20, n_init=1, random_state=seed)
     km.fit(X)
 
     order_centroids = km.cluster_centers_.argsort()[:, ::-1]
